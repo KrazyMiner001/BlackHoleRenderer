@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+eframe = "0.35.0"
+egui = "0.35.0"
+tokio = { version = "1.52.3", features = ["sync", "rt", "rt-multi-thread"] }
+wgpu = "30.0.0"
