@@ -1,21 +1,31 @@
 mod kernels;
+pub mod render_thread;
 
-use std::sync::Arc;
-use egui::{Color32, ColorImage, Image, ImageData, TextureHandle, TextureOptions};
+use crate::renderer::render_thread::{AppToRenderer, RendererToApp};
 use egui::load::SizedTexture;
+use egui::{Color32, ColorImage, Image, TextureHandle, TextureOptions};
 pub use kernels::Compute;
+use tokio::sync::mpsc;
 
 pub struct App {
-    image_handle: TextureHandle
+    tx: mpsc::Sender<AppToRenderer>,
+    rx: mpsc::Receiver<RendererToApp>,
+    texture: TextureHandle
 }
 
 impl App {
-    pub(crate) fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub(crate) fn new(
+        cc: &eframe::CreationContext<'_>,
+        tx: mpsc::Sender<AppToRenderer>,
+        rx: mpsc::Receiver<RendererToApp>,
+    ) -> Self {
         Self {
-            image_handle: cc.egui_ctx.load_texture(
-                "tex",
-                ImageData::Color(Arc::new(ColorImage::filled([100, 100], Color32::BLACK))),
-                TextureOptions::default()
+            tx,
+            rx,
+            texture: cc.egui_ctx.load_texture(
+                "image",
+                ColorImage::default(),
+                TextureOptions::LINEAR,
             )
         }
     }
@@ -23,13 +33,25 @@ impl App {
 
 impl eframe::App for App {
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
-        ui.add(Image::from_texture(SizedTexture::from_handle(&self.image_handle)));
+        if let Ok(message) = self.rx.try_recv() {
+            match message {
+                RendererToApp::NewImage(image) => {
+                    self.texture.set(image, TextureOptions::LINEAR)
+                }
+            }
+        }
+
+        ui.add(
+            Image::from_texture(
+                SizedTexture::from_handle(&self.texture)
+            ).fit_to_exact_size(ui.available_size())
+        );
 
         egui::Area::new(egui::Id::new("settings"))
             .movable(true)
             .show(ui, |ui| {
                 egui::Frame::NONE
-                    .fill(egui::Color32::DARK_GRAY)
+                    .fill(Color32::DARK_GRAY)
                     .stroke(egui::Stroke::new(3f32, Color32::GRAY))
                     .inner_margin(5)
                     .show(ui, |ui| {

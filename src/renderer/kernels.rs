@@ -34,8 +34,8 @@ impl Compute {
         )
     }
 
-    pub async fn sphere_shader<const WIDTH: u32, const HEIGHT: u32>(&self, pos: glam::Vec3) -> ColorImage {
-        self.sphere_shader.run::<WIDTH, HEIGHT>(&self.queue, pos).await
+    pub async fn sphere_shader(&self, pos: glam::Vec3, width: u32, height: u32) -> ColorImage {
+        self.sphere_shader.run(&self.queue, pos, width, height).await
     }
 }
 

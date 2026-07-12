@@ -11,5 +11,5 @@ var out_data: texture_storage_2d<rgba8uint, write>;
 fn main(
     @builtin(global_invocation_id) gid: vec3<u32>,
 ) {
-    textureStore(out_data, gid.xy, vec4(5, 22, 37, 19));
+    textureStore(out_data, gid.xy, vec4(gid.x, gid.y, 100, 256));
 }

@@ -26,7 +26,7 @@ impl BasicSphere {
         }
     }
 
-    pub async fn run<const WIDTH: u32, const HEIGHT: u32>(&self, queue: &Queue, position: glam::Vec3) -> ColorImage {
+    pub async fn run(&self, queue: &Queue, position: glam::Vec3, width: u32, height: u32) -> ColorImage {
         let mut uniform_buffer_bytes = UniformBuffer::new(Vec::new());
 
         uniform_buffer_bytes
@@ -43,8 +43,8 @@ impl BasicSphere {
         let texture = &self.device.create_texture(&TextureDescriptor {
             label: Some("texture"),
             size: Extent3d {
-                width: WIDTH,
-                height: HEIGHT,
+                width,
+                height,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -79,17 +79,17 @@ impl BasicSphere {
         compute_pass.set_pipeline(&self.pipeline);
         basic_sphere::set_bind_groups(&mut compute_pass, &bind_group);
         compute_pass.dispatch_workgroups(
-            WIDTH.div_ceil(basic_sphere::compute::MAIN_WORKGROUP_SIZE[0]),
-            HEIGHT.div_ceil(basic_sphere::compute::MAIN_WORKGROUP_SIZE[1]),
+            width.div_ceil(basic_sphere::compute::MAIN_WORKGROUP_SIZE[0]),
+            height.div_ceil(basic_sphere::compute::MAIN_WORKGROUP_SIZE[1]),
             1
         );
         drop(compute_pass);
 
-        let bytes_per_row = (WIDTH * 4).div_ceil(256) * 256;
+        let bytes_per_row = (width * 4).div_ceil(256) * 256;
 
         let temp_buffer = self.device.create_buffer(&BufferDescriptor {
             label: Some("temp"),
-            size: (bytes_per_row * HEIGHT) as BufferAddress,
+            size: (bytes_per_row * height) as BufferAddress,
             usage: BufferUsages::COPY_DST | BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
@@ -110,8 +110,8 @@ impl BasicSphere {
                 },
             },
             Extent3d {
-                width: WIDTH,
-                height: HEIGHT,
+                width,
+                height,
                 depth_or_array_layers: 1,
             }
         );
@@ -133,11 +133,11 @@ impl BasicSphere {
             raw_data
                 .to_vec()
                 .chunks(bytes_per_row as usize)
-                .flat_map(|row| { &row[0..(WIDTH * 4) as usize]})
+                .flat_map(|row| { &row[0..(width * 4) as usize]})
                 .map(|byte| *byte)
                 .collect::<Vec<u8>>()
         };
 
-        ColorImage::from_rgba_unmultiplied([WIDTH as usize, HEIGHT as usize], output_data.as_slice())
+        ColorImage::from_rgba_unmultiplied([width as usize, height as usize], output_data.as_slice())
     }
 }

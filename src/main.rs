@@ -1,19 +1,25 @@
+use crate::renderer::render_thread::{RenderThread, RendererToApp};
 use crate::renderer::App;
-use glam::vec3;
+use render_thread::AppToRenderer;
+use renderer::render_thread;
 use std::thread;
+use tokio::sync::mpsc;
 
 pub mod renderer;
 mod shader;
 
 fn main() -> Result<(), eframe::Error> {
-    thread::spawn(|| {
+    let (app_to_renderer_tx, app_to_renderer_rx) = mpsc::channel::<AppToRenderer>(5);
+    let (renderer_to_app_tx, renderer_to_app_rx) = mpsc::channel::<RendererToApp>(5);
+
+    thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            let compute = renderer::Compute::new().await;
-            let num = compute.test_shader(5).await;
-            let image = compute.sphere_shader::<8, 8>(vec3(0f32, 0f32, 0f32)).await;
-            println!("{num}");
-            println!("{:?}", image.pixels);
+        rt.block_on(async move {
+            let render_thread = RenderThread::new(renderer_to_app_tx, app_to_renderer_rx).await;
+
+            loop {
+                render_thread.run().await;
+            }
         })
     });
 
@@ -21,6 +27,6 @@ fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         "Test",
         native_options,
-        Box::new(|cc| Ok(Box::new(App::new(cc))))
+        Box::new(|cc| Ok(Box::new(App::new(cc, app_to_renderer_tx, renderer_to_app_rx))))
     )
 }
