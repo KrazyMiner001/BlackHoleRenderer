@@ -1,7 +1,9 @@
-use std::thread;
 use crate::renderer::App;
+use glam::vec3;
+use std::thread;
 
 pub mod renderer;
+mod shader;
 
 fn main() -> Result<(), eframe::Error> {
     thread::spawn(|| {
@@ -9,7 +11,9 @@ fn main() -> Result<(), eframe::Error> {
         rt.block_on(async {
             let compute = renderer::Compute::new().await;
             let num = compute.test_shader(5).await;
-            println!("{num}")
+            let image = compute.sphere_shader::<8, 8>(vec3(0f32, 0f32, 0f32)).await;
+            println!("{num}");
+            println!("{:?}", image.pixels);
         })
     });
 

@@ -1,3 +1,5 @@
+use crate::shader::BasicSphere;
+use egui::ColorImage;
 use std::sync::Arc;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::wgt::BufferDescriptor;
@@ -7,6 +9,7 @@ pub struct Compute {
     device: Arc<Device>,
     queue: Queue,
     test_shader: Shader,
+    sphere_shader: BasicSphere,
 }
 
 impl Compute {
@@ -17,17 +20,22 @@ impl Compute {
 
         let device = Arc::new(device);
 
-        let test_shader = Shader::new(wgpu::include_wgsl!("simple.wgsl"), device.clone());
+        let test_shader = Shader::new(wgpu::include_wgsl!("../shader/simple.wgsl"), device.clone());
+        let sphere_shader = BasicSphere::new(device.clone());
 
         Self {
-            device, queue, test_shader
+            device, queue, test_shader, sphere_shader
         }
     }
 
     pub async fn test_shader(&self, data: u32) -> u32 {
         u32::from_le_bytes(
-            self.test_shader.run(data.to_le_bytes(), &self.queue).await
+            self.test_shader.run_simple(data.to_le_bytes(), &self.queue).await
         )
+    }
+
+    pub async fn sphere_shader<const WIDTH: u32, const HEIGHT: u32>(&self, pos: glam::Vec3) -> ColorImage {
+        self.sphere_shader.run::<WIDTH, HEIGHT>(&self.queue, pos).await
     }
 }
 
@@ -56,7 +64,7 @@ impl Shader {
         }
     }
 
-    pub async fn run<const INPUT_SIZE: usize, const OUTPUT_SIZE: usize>(&self, input: [u8; INPUT_SIZE], queue: &Queue) -> [u8; OUTPUT_SIZE] {
+    pub async fn run_simple<const INPUT_SIZE: usize, const OUTPUT_SIZE: usize>(&self, input: [u8; INPUT_SIZE], queue: &Queue) -> [u8; OUTPUT_SIZE] {
         let input_buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("input"),
             contents: &input,
@@ -89,7 +97,6 @@ impl Shader {
                 }
             ]
         });
-
 
         let mut encoder = self.device.create_command_encoder(&Default::default());
 
