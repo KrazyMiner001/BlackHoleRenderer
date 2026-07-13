@@ -31,7 +31,7 @@ impl RenderThread {
         let state = Arc::new(RenderThreadState {
             transmitter: tx,
             compute: Compute::new().await,
-            position: Mutex::new(vec3(0f32, 0f32, 0f32)),
+            position: Mutex::new(vec3(0f32, 0f32, -5f32)),
             resolution: Mutex::new((100, 100))
         });
         let state_clone = state.clone();

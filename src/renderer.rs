@@ -3,14 +3,16 @@ pub mod render_thread;
 
 use crate::renderer::render_thread::{AppToRenderer, RendererToApp};
 use egui::load::SizedTexture;
-use egui::{Color32, ColorImage, Image, TextureHandle, TextureOptions};
+use egui::{Color32, ColorImage, DragValue, Image, TextureHandle, TextureOptions};
+use glam::{vec3, Vec3};
 pub use kernels::Compute;
 use tokio::sync::mpsc;
 
 pub struct App {
     tx: mpsc::Sender<AppToRenderer>,
     rx: mpsc::Receiver<RendererToApp>,
-    texture: TextureHandle
+    texture: TextureHandle,
+    position: Vec3,
 }
 
 impl App {
@@ -26,7 +28,8 @@ impl App {
                 "image",
                 ColorImage::default(),
                 TextureOptions::LINEAR,
-            )
+            ),
+            position: vec3(0.0, 0.0, -5.0)
         }
     }
 }
@@ -57,6 +60,49 @@ impl eframe::App for App {
                     .show(ui, |ui| {
                         let _ = ui.button("Test");
                         ui.label("Meow");
+
+                        ui.add(
+                            DragValue::from_get_set(|num| {
+                                match num {
+                                    Some(value) => {
+                                        self.position.x = value as f32;
+                                        self.tx.blocking_send(AppToRenderer::PositionChanged(self.position)).unwrap();
+                                        value
+                                    }
+                                    None => {
+                                        self.position.x as f64
+                                    }
+                                }
+                            }).speed(0.1)
+                        );
+                        ui.add(
+                            DragValue::from_get_set(|num| {
+                                match num {
+                                    Some(value) => {
+                                        self.position.y = value as f32;
+                                        self.tx.blocking_send(AppToRenderer::PositionChanged(self.position)).unwrap();
+                                        value
+                                    }
+                                    None => {
+                                        self.position.y as f64
+                                    }
+                                }
+                            }).speed(0.1)
+                        );
+                        ui.add(
+                            DragValue::from_get_set(|num| {
+                                match num {
+                                    Some(value) => {
+                                        self.position.z = value as f32;
+                                        self.tx.blocking_send(AppToRenderer::PositionChanged(self.position)).unwrap();
+                                        value
+                                    }
+                                    None => {
+                                        self.position.z as f64
+                                    }
+                                }
+                            }).speed(0.1)
+                        );
                     });
             });
     }

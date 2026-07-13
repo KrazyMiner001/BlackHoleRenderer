@@ -13,7 +13,7 @@ pub mod bind_groups {
         entries: &[
             wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::NONE,
+                visibility: wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -112,6 +112,8 @@ pub const ENTRY_MAIN: &str = "main";
 #[derive(Debug, Copy, Clone, PartialEq, encase :: ShaderType)]
 pub struct Uniforms {
     pub position: glam::Vec3,
+    pub radius: f32,
+    pub camera_size: glam::Vec2,
 }
 pub trait SetBindGroup {
     fn set_bind_group(

@@ -1,8 +1,7 @@
 use egui::ColorImage;
 use encase::UniformBuffer;
-use std::io::{BufRead, Read};
-use std::ops::Div;
 use std::sync::Arc;
+use glam::vec2;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::wgt::BufferDescriptor;
 use wgpu::{BufferAddress, BufferUsages, ComputePipeline, Device, Extent3d, MapMode, PollType, Queue, TexelCopyBufferInfo, TexelCopyBufferLayout, TexelCopyTextureInfo, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension};
@@ -32,6 +31,8 @@ impl BasicSphere {
         uniform_buffer_bytes
             .write(&basic_sphere::Uniforms {
                 position,
+                radius: 1.0,
+                camera_size: vec2(3.0, 3.0),
             })
             .unwrap();
 
@@ -134,7 +135,7 @@ impl BasicSphere {
                 .to_vec()
                 .chunks(bytes_per_row as usize)
                 .flat_map(|row| { &row[0..(width * 4) as usize]})
-                .map(|byte| *byte)
+                .copied()
                 .collect::<Vec<u8>>()
         };
 
