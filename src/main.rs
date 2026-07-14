@@ -1,6 +1,7 @@
 use std::sync::{Arc};
 use crate::renderer::render_thread::{RenderThread, RendererToApp};
 use std::thread;
+use std::time::Duration;
 use glam::vec3;
 use tokio::sync::{mpsc, Mutex};
 use crate::renderer::app::App;
@@ -14,8 +15,9 @@ fn main() -> Result<(), eframe::Error> {
     let state = Arc::new(
         RenderState {
             position: Mutex::new(vec3(0.0, 0.0, -5.0)),
-            resolution: Mutex::new((100, 100)),
+            resolution: Mutex::new((1000, 1000)),
             rotation: Mutex::new((0.0, 0.0)),
+            last_frame_time: Mutex::new(Duration::ZERO),
         }
     );
     let state_clone = state.clone();

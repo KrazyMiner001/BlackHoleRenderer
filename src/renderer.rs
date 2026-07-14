@@ -1,3 +1,4 @@
+use std::time::Duration;
 use tokio::sync::Mutex;
 
 mod kernels;
@@ -8,4 +9,5 @@ pub struct RenderState {
     pub(crate) position: Mutex<glam::Vec3>,
     pub(crate) resolution: Mutex<(u32, u32)>,
     pub(crate) rotation: Mutex<(f32, f32)>,
+    pub(crate) last_frame_time: Mutex<Duration>,
 }

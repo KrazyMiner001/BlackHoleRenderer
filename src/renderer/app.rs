@@ -22,7 +22,7 @@ impl App {
             rx,
             texture: cc.egui_ctx.load_texture(
                 "image",
-                ColorImage::default(),
+                ColorImage::filled([1, 1], Color32::BLACK),
                 TextureOptions::LINEAR,
             ),
         }
@@ -53,8 +53,9 @@ impl eframe::App for App {
                     .stroke(egui::Stroke::new(3f32, Color32::GRAY))
                     .inner_margin(5)
                     .show(ui, |ui| {
-                        let _ = ui.button("Test");
-                        ui.label("Meow");
+                        ui.label(
+                            format!("Last frame time: {}ns", self.state.last_frame_time.blocking_lock().as_nanos())
+                        );
 
                         ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
                             let mut pos = self.state.position.blocking_lock();
