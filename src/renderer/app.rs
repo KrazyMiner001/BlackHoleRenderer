@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use crate::renderer::render_thread::{RendererToApp};
 use egui::load::SizedTexture;
-use egui::{Color32, ColorImage, DragValue, Image, TextureHandle, TextureOptions};
+use egui::{Color32, ColorImage, DragValue, Image, Layout, TextureHandle, TextureOptions};
 use tokio::sync::mpsc;
 use crate::renderer::RenderState;
 
@@ -56,45 +56,18 @@ impl eframe::App for App {
                         let _ = ui.button("Test");
                         ui.label("Meow");
 
-                        ui.add(
-                            DragValue::from_get_set(|num| {
-                                match num {
-                                    Some(value) => {
-                                        self.state.position.blocking_lock().x = value as f32;
-                                        value
-                                    }
-                                    None => {
-                                        self.state.position.blocking_lock().x as f64
-                                    }
-                                }
-                            }).speed(0.1)
-                        );
-                        ui.add(
-                            DragValue::from_get_set(|num| {
-                                match num {
-                                    Some(value) => {
-                                        self.state.position.blocking_lock().y = value as f32;
-                                        value
-                                    }
-                                    None => {
-                                        self.state.position.blocking_lock().y as f64
-                                    }
-                                }
-                            }).speed(0.1)
-                        );
-                        ui.add(
-                            DragValue::from_get_set(|num| {
-                                match num {
-                                    Some(value) => {
-                                        self.state.position.blocking_lock().z = value as f32;
-                                        value
-                                    }
-                                    None => {
-                                        self.state.position.blocking_lock().z as f64
-                                    }
-                                }
-                            }).speed(0.1)
-                        );
+                        ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
+                            let mut pos = self.state.position.blocking_lock();
+                            ui.add(
+                                DragValue::new(&mut pos.x).speed(0.1)
+                            );
+                            ui.add(
+                                DragValue::new(&mut pos.y).speed(0.1)
+                            );
+                            ui.add(
+                                DragValue::new(&mut pos.z).speed(0.1)
+                            );
+                        });
                     });
             });
     }
