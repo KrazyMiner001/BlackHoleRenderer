@@ -1,21 +1,28 @@
+use std::sync::{Arc};
 use crate::renderer::render_thread::{RenderThread, RendererToApp};
-use crate::renderer::App;
-use render_thread::AppToRenderer;
-use renderer::render_thread;
 use std::thread;
-use tokio::sync::mpsc;
+use glam::vec3;
+use tokio::sync::{mpsc, Mutex};
+use crate::renderer::app::App;
+use crate::renderer::RenderState;
 
 pub mod renderer;
 mod shader;
 
 fn main() -> Result<(), eframe::Error> {
-    let (app_to_renderer_tx, app_to_renderer_rx) = mpsc::channel::<AppToRenderer>(5);
     let (renderer_to_app_tx, renderer_to_app_rx) = mpsc::channel::<RendererToApp>(5);
+    let state = Arc::new(
+        RenderState {
+            position: Mutex::new(vec3(0.0, 0.0, -5.0)),
+            resolution: Mutex::new((100, 100))
+        }
+    );
+    let state_clone = state.clone();
 
     thread::spawn(move || {
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async move {
-            let render_thread = RenderThread::new(renderer_to_app_tx, app_to_renderer_rx).await;
+        rt.block_on(async {
+            let render_thread = RenderThread::new(renderer_to_app_tx, state_clone).await;
 
             loop {
                 render_thread.run().await;
@@ -27,6 +34,6 @@ fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         "Test",
         native_options,
-        Box::new(|cc| Ok(Box::new(App::new(cc, app_to_renderer_tx, renderer_to_app_rx))))
+        Box::new(|cc| Ok(Box::new(App::new(cc, state.clone(), renderer_to_app_rx))))
     )
 }
