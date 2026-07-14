@@ -1,6 +1,7 @@
 use crate::shader::BasicSphere;
 use egui::ColorImage;
 use std::sync::Arc;
+use glam::Vec3;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::wgt::BufferDescriptor;
 use wgpu::{BindGroupDescriptor, BindGroupEntry, BufferAddress, BufferUsages, ComputePipeline, ComputePipelineDescriptor, Device, DeviceDescriptor, MapMode, Queue, RequestAdapterOptions, ShaderModule, ShaderModuleDescriptor};
@@ -34,8 +35,8 @@ impl Compute {
         )
     }
 
-    pub async fn sphere_shader(&self, pos: glam::Vec3, width: u32, height: u32) -> ColorImage {
-        self.sphere_shader.run(&self.queue, pos, width, height).await
+    pub async fn sphere_shader(&self, pos: Vec3, width: u32, height: u32, camera_normal: Vec3) -> ColorImage {
+        self.sphere_shader.run(&self.queue, pos, width, height, camera_normal).await
     }
 }
 

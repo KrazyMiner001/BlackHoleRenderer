@@ -68,6 +68,16 @@ impl eframe::App for App {
                                 DragValue::new(&mut pos.z).speed(0.1)
                             );
                         });
+
+                        ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
+                            let mut rot = self.state.rotation.blocking_lock();
+                            ui.add(
+                                DragValue::new(&mut rot.0).speed(0.01)
+                            );
+                            ui.add(
+                                DragValue::new(&mut rot.1).speed(0.01)
+                            );
+                        });
                     });
             });
     }

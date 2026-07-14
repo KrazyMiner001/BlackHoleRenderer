@@ -2,9 +2,11 @@ struct Uniforms {
     position: vec3<f32>,
     radius: f32,
     camera_size: vec2<f32>,
+    camera_normal: vec3<f32>,
 }
 
 const max_iterations = 10000;
+const delta = 0.1;
 
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
@@ -35,6 +37,6 @@ fn main(
             textureStore(out_data, gid.xy, vec4(255, 0, 127, 255));
             break;
         }
-        pos += vec3(0, 0, 0.1);
+        pos += uniforms.camera_normal * delta;
     };
 }

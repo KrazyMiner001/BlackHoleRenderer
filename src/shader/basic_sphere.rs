@@ -114,6 +114,7 @@ pub struct Uniforms {
     pub position: glam::Vec3,
     pub radius: f32,
     pub camera_size: glam::Vec2,
+    pub camera_normal: glam::Vec3,
 }
 pub trait SetBindGroup {
     fn set_bind_group(

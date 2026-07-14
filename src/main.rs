@@ -14,7 +14,8 @@ fn main() -> Result<(), eframe::Error> {
     let state = Arc::new(
         RenderState {
             position: Mutex::new(vec3(0.0, 0.0, -5.0)),
-            resolution: Mutex::new((100, 100))
+            resolution: Mutex::new((100, 100)),
+            rotation: Mutex::new((0.0, 0.0)),
         }
     );
     let state_clone = state.clone();

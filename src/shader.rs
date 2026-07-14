@@ -1,7 +1,7 @@
 use egui::ColorImage;
 use encase::UniformBuffer;
 use std::sync::Arc;
-use glam::vec2;
+use glam::{vec2, Vec3};
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::wgt::BufferDescriptor;
 use wgpu::{BufferAddress, BufferUsages, ComputePipeline, Device, Extent3d, MapMode, PollType, Queue, TexelCopyBufferInfo, TexelCopyBufferLayout, TexelCopyTextureInfo, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor, TextureViewDimension};
@@ -25,7 +25,7 @@ impl BasicSphere {
         }
     }
 
-    pub async fn run(&self, queue: &Queue, position: glam::Vec3, width: u32, height: u32) -> ColorImage {
+    pub async fn run(&self, queue: &Queue, position: glam::Vec3, width: u32, height: u32, camera_normal: Vec3) -> ColorImage {
         let mut uniform_buffer_bytes = UniformBuffer::new(Vec::new());
 
         uniform_buffer_bytes
@@ -33,6 +33,7 @@ impl BasicSphere {
                 position,
                 radius: 1.0,
                 camera_size: vec2(3.0, 3.0),
+                camera_normal,
             })
             .unwrap();
 
