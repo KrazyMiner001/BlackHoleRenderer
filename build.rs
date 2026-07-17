@@ -2,7 +2,7 @@ use std::fmt::Write;
 use wgsl_to_wgpu::{create_shader_module, MatrixVectorTypes, WriteOptions};
 
 fn main() -> Result<(), Box<dyn std::error::Error>>{
-    for name in ["basic_sphere", "simple"] {
+    for name in ["basic_sphere", "simple", "kerr"] {
         println!("cargo:rerun-if-changed=src/shader/{name}.wgsl");
         let wgsl_source = std::fs::read_to_string(format!("src/shader/{name}.wgsl"))?;
 

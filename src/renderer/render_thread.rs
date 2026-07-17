@@ -38,7 +38,8 @@ impl RenderThread {
         let normal = Mat3::from_rotation_x(pitch) * Mat3::from_rotation_y(yaw) * vec3(0.0, 0.0, 1.0);
 
         let now = Instant::now();
-        let image = self.compute.sphere_shader(pos, width, height, normal).await;
+        //let image = self.compute.sphere_shader(pos, width, height, normal).await;
+        let image = self.compute.kerr_shader(pos, width, height, normal).await;
         let duration = Instant::now() - now;
 
         *self.state.last_frame_time.lock().await = duration;

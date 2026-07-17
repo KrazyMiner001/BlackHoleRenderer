@@ -3,27 +3,70 @@ alias num = f32;
 struct Uniforms {
     M: num,
     a: num,
+    camera_pos: vec3<num>,
+    camera_size: vec2<num>,
+    camera_normal: vec3<num>,
 }
 
 struct Variables {
     M: num,
-    x: num,
-    y: num,
-    z: num,
+    pos: vec4<num>,
     a: num,
 };
 
 const G = 1;
 const c = 1;
 
+const DELTA = 0.001;
+const MAX_ITERATIONS = 100000;
+
 const zeroMat = mat4x4<num>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+const maxIterColor = vec4(255, 0, 0, 255);
+
+const skyRadius = 15;
 
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
+@group(0) @binding(1)
+var out: texture_storage_2d<rgba8uint, write>;
 
 @compute @workgroup_size(8, 8)
-fn main() {
+fn main(
+    @builtin(global_invocation_id) gid: vec3<u32>,
+) {
+    let tex_size = vec2<num>(textureDimensions(out));
+    let camera_relative = (vec2<num>(gid.xy) / tex_size) - 0.5;
+    let pos = uniforms.camera_pos + vec3(camera_relative * uniforms.camera_size, 0);
 
+    var variables: Variables;
+    variables.M = uniforms.M;
+    variables.a = uniforms.a;
+    variables.pos = vec4(pos, 0);
+
+    var velocity = vec4(uniforms.camera_normal, 0); //todo: better initial velocity
+
+    var iter_count = 0;
+    loop {
+        iter_count++;
+        if (iter_count >= MAX_ITERATIONS) {
+            store_color(gid, maxIterColor);
+            break;
+        }
+
+        variables.pos += velocity * DELTA;
+        velocity += geodesic(velocity, variables) * DELTA;
+
+        if (length(variables.pos.xyz) < 3) { //approximate photon sphere
+            store_color(gid, vec4(0, 255, 0, 255));
+            break;
+        }
+
+        if (length(variables.pos.xyz) > skyRadius) {
+            store_color(gid, vec4(vec3<u32>(variables.pos.xyz * 255), 255));
+            break;
+        }
+    }
 }
 
 fn metric(vars: Variables) -> mat4x4<num> {
@@ -36,8 +79,6 @@ fn metric(vars: Variables) -> mat4x4<num> {
     let r = calc_r(vars);
     let f = calc_f(vars, r);
     let k = calc_k(vars, r);
-
-
 
     return minkowski + f * outer_product(k, k);
 }
@@ -52,21 +93,21 @@ fn outer_product(first: vec4<num>, second: vec4<num>) -> mat4x4<num> {
 }
 
 fn calc_f(vars: Variables, r: num) -> num {
-    return (2 * G * vars.M * pow(r, 3)) / (pow(r, 4) + vars.a * vars.a * vars.z * vars.z);
+    return (2 * G * vars.M * pow(r, 3)) / (pow(r, 4) + vars.a * vars.a * vars.pos.z * vars.pos.z);
 }
 
 fn calc_k(vars: Variables, r: num) -> vec4<num> {
     return vec4(
         1,
-        (r * vars.x + vars.a * vars.y) / (r * r + vars.a * vars.a),
-        (r * vars.y - vars.a * vars.x) / (r * r + vars.a * vars.a),
-        vars.z / r
+        (r * vars.pos.x + vars.a * vars.pos.y) / (r * r + vars.a * vars.a),
+        (r * vars.pos.y - vars.a * vars.pos.x) / (r * r + vars.a * vars.a),
+        vars.pos.z / r
     );
 }
 
 fn calc_r(vars: Variables) -> num {
     return sqrt(
-        vars.a * (1 - vars.z * vars.z) / (vars.x * vars.x + vars.y * vars.y + vars.z * vars.z - 1)
+        vars.a * (1 - vars.pos.z * vars.pos.z) / (vars.pos.x * vars.pos.x + vars.pos.y * vars.pos.y + vars.pos.z * vars.pos.z - 1)
     );
 }
 
@@ -75,22 +116,22 @@ fn inverse(mat: mat4x4<num>) -> mat4x4<num> {
 }
 
 fn christoffel(vars: Variables) -> array<mat4x4<num>, 4> {
-    const epsilon = 0.001;
+    const epsilon = 0.00001;
     let g = metric(vars);
 
     let nabla0 = zeroMat;
 
     var varsClone = vars;
-    varsClone.x = vars.x + sqrt(epsilon) * vars.x;
-    let nabla1 = (metric(varsClone) - g) * (1 / varsClone.x - vars.x);
+    varsClone.pos.x = vars.pos.x + sqrt(epsilon) * vars.pos.x;
+    let nabla1 = (metric(varsClone) - g) * (1 / varsClone.pos.x - vars.pos.x);
 
-    varsClone.x = vars.x;
-    varsClone.y = vars.y + sqrt(epsilon) * vars.y;
-    let nabla2 = (metric(varsClone) - g) * (1 / varsClone.y - vars.y);
+    varsClone.pos.x = vars.pos.x;
+    varsClone.pos.y = vars.pos.y + sqrt(epsilon) * vars.pos.y;
+    let nabla2 = (metric(varsClone) - g) * (1 / varsClone.pos.y - vars.pos.y);
 
-    varsClone.y = vars.y;
-    varsClone.z = vars.z + sqrt(epsilon) * vars.z;
-    let nabla3 = (metric(varsClone) - g) * (1 / varsClone.z - vars.z);
+    varsClone.pos.y = vars.pos.y;
+    varsClone.pos.z = vars.pos.z + sqrt(epsilon) * vars.pos.z;
+    let nabla3 = (metric(varsClone) - g) * (1 / varsClone.pos.z - vars.pos.z);
 
     let nabla = array(
         nabla0,
@@ -116,4 +157,25 @@ fn christoffel(vars: Variables) -> array<mat4x4<num>, 4> {
     }
 
     return symbol;
+}
+
+fn geodesic(velocity: vec4<num>, vars: Variables) -> vec4<num> {
+    var acceleration = vec4<num>(0);
+    var christoffel_syms = christoffel(vars);
+
+    for (var mu = 0; mu < 4; mu++) {
+        var total: num = 0;
+        for (var alpha = 0; alpha < 4; alpha++) {
+            for (var beta = 0; beta < 4; beta++) {
+                total += velocity[alpha] * velocity[beta] * christoffel_syms[mu][alpha][beta];
+            }
+        }
+        acceleration[mu] = -total;
+    }
+
+    return acceleration;
+}
+
+fn store_color(gid: vec3<u32>, color: vec4<u32>) {
+    textureStore(out, gid.xy, color);
 }

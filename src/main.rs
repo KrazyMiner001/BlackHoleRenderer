@@ -15,7 +15,7 @@ fn main() -> Result<(), eframe::Error> {
     let state = Arc::new(
         RenderState {
             position: Mutex::new(vec3(0.0, 0.0, -5.0)),
-            resolution: Mutex::new((1000, 1000)),
+            resolution: Mutex::new((50, 50)),
             rotation: Mutex::new((0.0, 0.0)),
             last_frame_time: Mutex::new(Duration::ZERO),
         }

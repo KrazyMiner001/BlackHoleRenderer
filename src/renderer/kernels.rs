@@ -1,4 +1,4 @@
-use crate::shader::BasicSphere;
+use crate::shader::{BasicSphere, Kerr};
 use egui::ColorImage;
 use std::sync::Arc;
 use glam::Vec3;
@@ -11,6 +11,7 @@ pub struct Compute {
     queue: Queue,
     test_shader: Shader,
     sphere_shader: BasicSphere,
+    kerr_shader: Kerr,
 }
 
 impl Compute {
@@ -23,9 +24,10 @@ impl Compute {
 
         let test_shader = Shader::new(wgpu::include_wgsl!("../shader/simple.wgsl"), device.clone());
         let sphere_shader = BasicSphere::new(device.clone());
+        let kerr_shader = Kerr::new(device.clone());
 
         Self {
-            device, queue, test_shader, sphere_shader
+            device, queue, test_shader, sphere_shader, kerr_shader,
         }
     }
 
@@ -37,6 +39,10 @@ impl Compute {
 
     pub async fn sphere_shader(&self, pos: Vec3, width: u32, height: u32, camera_normal: Vec3) -> ColorImage {
         self.sphere_shader.run(&self.queue, pos, width, height, camera_normal).await
+    }
+
+    pub async fn kerr_shader(&self, position: Vec3, width: u32, height: u32, camera_normal: Vec3) -> ColorImage {
+        self.kerr_shader.run(&self.queue, position, width, height, camera_normal).await
     }
 }
 
