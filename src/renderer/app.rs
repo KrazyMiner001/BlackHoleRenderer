@@ -54,7 +54,7 @@ impl eframe::App for App {
                     .inner_margin(5)
                     .show(ui, |ui| {
                         ui.label(
-                            format!("Last frame time: {}ns", self.state.last_frame_time.blocking_lock().as_nanos())
+                            format!("Last frame time: {:.1}ms", self.state.last_frame_time.blocking_lock().as_secs_f64() * 1000.0)
                         );
 
                         ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
