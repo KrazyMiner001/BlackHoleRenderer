@@ -41,8 +41,8 @@ impl Compute {
         self.sphere_shader.run(&self.queue, pos, width, height, camera_normal).await
     }
 
-    pub async fn kerr_shader(&self, position: Vec3, width: u32, height: u32, camera_normal: Vec3) -> ColorImage {
-        self.kerr_shader.run(&self.queue, position, width, height, camera_normal).await
+    pub async fn kerr_shader(&self, position: Vec3, width: u32, height: u32, camera_normal: Vec3, a_value: f32) -> ColorImage {
+        self.kerr_shader.run(&self.queue, position, width, height, camera_normal, a_value).await
     }
 }
 

@@ -161,7 +161,7 @@ impl Kerr {
         }
     }
 
-    pub async fn run(&self, queue: &Queue, position: Vec3, width: u32, height: u32, camera_normal: Vec3) -> ColorImage {
+    pub async fn run(&self, queue: &Queue, position: Vec3, width: u32, height: u32, camera_normal: Vec3, a_value: f32) -> ColorImage {
         let mut uniform_buffer_bytes = UniformBuffer::new(Vec::new());
 
         unsafe {
@@ -171,7 +171,7 @@ impl Kerr {
         uniform_buffer_bytes
             .write(&kerr::Uniforms {
                 M: 1.0,
-                a: 0.0,
+                a: a_value,
                 camera_pos: position,
                 camera_size: vec2(5.0, 5.0),
                 camera_normal,

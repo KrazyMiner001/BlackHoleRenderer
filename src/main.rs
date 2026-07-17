@@ -5,7 +5,7 @@ use std::time::Duration;
 use glam::vec3;
 use tokio::sync::{mpsc, Mutex};
 use crate::renderer::app::App;
-use crate::renderer::RenderState;
+use crate::renderer::{HoleProperties, RenderState};
 
 pub mod renderer;
 mod shader;
@@ -15,9 +15,13 @@ fn main() -> Result<(), eframe::Error> {
     let state = Arc::new(
         RenderState {
             position: Mutex::new(vec3(0.0, 0.0, -5.0)),
-            resolution: Mutex::new((50, 50)),
+            resolution: Mutex::new((100, 100)),
             rotation: Mutex::new((0.0, 0.0)),
             last_frame_time: Mutex::new(Duration::ZERO),
+            hole_properties: Mutex::new(HoleProperties {
+                M: 1.0,
+                a: 0.0,
+            })
         }
     );
     let state_clone = state.clone();

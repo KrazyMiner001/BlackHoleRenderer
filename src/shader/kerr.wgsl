@@ -44,6 +44,8 @@ fn main(
     variables.a = uniforms.a;
     variables.pos = vec4(pos, 0);
 
+    let photon_sphere = 1.5 * (1 + sqrt(1 - variables.a * variables.a));
+
     var velocity = vec4(uniforms.camera_normal, 0); //todo: better initial velocity
 
     var iter_count = 0;
@@ -57,7 +59,7 @@ fn main(
         variables.pos += velocity * DELTA;
         velocity += geodesic(velocity, variables) * DELTA;
 
-        if (length(variables.pos.xyz) < 2.5) { //approximate photon sphere
+        if (length(variables.pos.xyz) < photon_sphere) {
             store_color(gid, vec4(0, 255, 0, 255));
             break;
         }

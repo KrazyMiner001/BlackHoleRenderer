@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use crate::renderer::render_thread::{RendererToApp};
 use egui::load::SizedTexture;
-use egui::{Color32, ColorImage, DragValue, Image, Layout, TextureHandle, TextureOptions};
+use egui::{Color32, ColorImage, DragValue, Image, Layout, Slider, TextureHandle, TextureOptions};
 use tokio::sync::mpsc;
 use crate::renderer::RenderState;
 
@@ -78,6 +78,13 @@ impl eframe::App for App {
                             ui.add(
                                 DragValue::new(&mut rot.1).speed(0.01)
                             );
+                        });
+
+                        ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
+                            let mut hole_properties = self.state.hole_properties.blocking_lock();
+                            ui.add(
+                                Slider::new(&mut hole_properties.a, 0.0..=1.0)
+                            )
                         });
                     });
             });
