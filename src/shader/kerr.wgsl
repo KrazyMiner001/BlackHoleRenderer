@@ -21,6 +21,7 @@ const DELTA = 0.001;
 const MAX_ITERATIONS = 50000;
 
 const zeroMat = mat4x4<num>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+const identityMat = mat4x4<num>(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 
 const maxIterColor = vec4(255, 0, 0, 255);
 
@@ -116,7 +117,11 @@ fn calc_r(vars: Variables) -> num {
 }
 
 fn inverse(mat: mat4x4<num>) -> mat4x4<num> {
-    return transpose(mat); //todo: actually take inverse, but this approximation should be fine for now
+    return (1 / determinant(mat)) *
+        ((1/6) *
+            (pow(tr(mat), 3) - 3 * tr(mat * tr(mat * mat)) + 2 * tr(mat * mat * mat)) * identityMat
+            -0.5 * mat * (pow(tr(mat), 2) - tr(mat * mat)) + mat * mat * tr(mat) - mat * mat * mat
+        );
 }
 
 fn christoffel(vars: Variables) -> array<mat4x4<num>, 4> {
@@ -182,4 +187,8 @@ fn geodesic(velocity: vec4<num>, vars: Variables) -> vec4<num> {
 
 fn store_color(gid: vec3<u32>, color: vec4<u32>) {
     textureStore(out, gid.xy, color);
+}
+
+fn tr(matrix: mat4x4<num>) -> num {
+    return matrix[0][0] + matrix[1][1] + matrix[2][2] + matrix[3][3];
 }
