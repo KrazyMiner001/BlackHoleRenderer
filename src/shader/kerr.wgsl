@@ -17,11 +17,17 @@ struct Variables {
 const G = 1;
 const c = 1;
 
-const DELTA = 0.001;
-const MAX_ITERATIONS = 50000;
+const DELTA = 0.01;
+const MAX_ITERATIONS = 10000;
 
-const zeroMat = mat4x4<num>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+const zeroMat = mat4x4<num>();
 const identityMat = mat4x4<num>(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+const minkowski = mat4x4<num>(
+        -1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 0, 1,
+        0, 0, 0, 1,
+    );
 
 const maxIterColor = vec4(255, 0, 0, 255);
 
@@ -73,12 +79,6 @@ fn main(
 }
 
 fn metric(vars: Variables) -> mat4x4<num> {
-    const minkowski = mat4x4<num>(
-        -1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 0, 1,
-        0, 0, 0, 1,
-    );
     let r = calc_r(vars);
     let f = calc_f(vars, r);
     let k = calc_k(vars, r);
