@@ -18,7 +18,7 @@ const G = 1;
 const c = 1;
 
 const DELTA = 0.001;
-const MAX_ITERATIONS = 100000;
+const MAX_ITERATIONS = 50000;
 
 const zeroMat = mat4x4<num>(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
@@ -57,13 +57,13 @@ fn main(
         variables.pos += velocity * DELTA;
         velocity += geodesic(velocity, variables) * DELTA;
 
-        if (length(variables.pos.xyz) < 3) { //approximate photon sphere
+        if (length(variables.pos.xyz) < 2.5) { //approximate photon sphere
             store_color(gid, vec4(0, 255, 0, 255));
             break;
         }
 
         if (length(variables.pos.xyz) > skyRadius) {
-            store_color(gid, vec4(vec3<u32>(variables.pos.xyz * 255), 255));
+            store_color(gid, vec4(vec3<u32>(variables.pos.xyz / 10 * 255), 255));
             break;
         }
     }
@@ -106,8 +106,10 @@ fn calc_k(vars: Variables, r: num) -> vec4<num> {
 }
 
 fn calc_r(vars: Variables) -> num {
+    let minus_b = length(vars.pos) - vars.a * vars.a;
+
     return sqrt(
-        vars.a * (1 - vars.pos.z * vars.pos.z) / (vars.pos.x * vars.pos.x + vars.pos.y * vars.pos.y + vars.pos.z * vars.pos.z - 1)
+        0.5 * (minus_b + sqrt(minus_b * minus_b + 4 * vars.pos.z * vars.pos.z * vars.a * vars.a))
     );
 }
 
