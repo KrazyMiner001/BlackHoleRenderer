@@ -8,12 +8,6 @@ struct Uniforms {
     camera_normal: vec3<num>,
 }
 
-struct Variables {
-    M: num,
-    pos: vec4<num>,
-    a: num,
-};
-
 const G = 1;
 const c = 1;
 
@@ -44,14 +38,11 @@ fn main(
 ) {
     let tex_size = vec2<num>(textureDimensions(out));
     let camera_relative = (vec2<num>(gid.xy) / tex_size) - 0.5;
-    let pos = uniforms.camera_pos + vec3(camera_relative * uniforms.camera_size, 0);
+    let initial_pos = uniforms.camera_pos + vec3(camera_relative * uniforms.camera_size, 0);
 
-    var variables: Variables;
-    variables.M = uniforms.M;
-    variables.a = uniforms.a;
-    variables.pos = vec4(pos, 0);
+    var pos = vec4(initial_pos, 0);
 
-    let photon_sphere = 1.5 * (1 + sqrt(1 - variables.a * variables.a));
+    let photon_sphere = 1.5 * (1 + sqrt(1 - uniforms.a * uniforms.a));
 
     var velocity = vec4(uniforms.camera_normal, 0); //todo: better initial velocity
 
@@ -65,40 +56,37 @@ fn main(
 
         { //Runge-Kutta
             let k1pos = velocity;
-            let k1vel = geodesic(velocity, variables);
+            let k1vel = geodesic(velocity, pos);
 
-            let varsForK2 = Variables(uniforms.M, variables.pos + k1pos * (DELTA / 2), uniforms.a);
             let k2pos = velocity + k1vel * (DELTA / 2);
-            let k2vel = geodesic(velocity + k1vel * (DELTA / 2), varsForK2);
+            let k2vel = geodesic(velocity + k1vel * (DELTA / 2), pos + k1pos * (DELTA / 2));
 
-            let varsForK3 = Variables(uniforms.M, variables.pos + k2pos * (DELTA / 2), uniforms.a);
             let k3pos = velocity + k2vel * (DELTA / 2);
-            let k3vel = geodesic(velocity + k2vel * (DELTA / 2), varsForK3);
+            let k3vel = geodesic(velocity + k2vel * (DELTA / 2), pos + k2pos * (DELTA / 2));
 
-            let varsForK4 = Variables(uniforms.M, variables.pos + k3pos * DELTA, uniforms.a);
             let k4pos = velocity + k3vel * DELTA;
-            let k4vel = geodesic(velocity + k3vel * DELTA, varsForK4);
+            let k4vel = geodesic(velocity + k3vel * DELTA, pos + k3pos * DELTA);
 
             velocity += (DELTA / 6) * (k1vel + k2vel + k3vel + k4vel);
-            variables.pos += (DELTA / 6) * (k1pos + k2pos + k3pos + k4pos);
+            pos += (DELTA / 6) * (k1pos + k2pos + k3pos + k4pos);
         }
 
-        if (length(variables.pos.xyz) < photon_sphere) {
+        if (length(pos.xyz) < photon_sphere) {
             store_color(gid, vec4(0, 255, 0, 255));
             break;
         }
 
-        if (length(variables.pos.xyz) > skyRadius) {
-            store_color(gid, vec4(vec3<u32>(variables.pos.xyz / 10 * 255), 255));
+        if (length(pos.xyz) > skyRadius) {
+            store_color(gid, vec4(vec3<u32>(pos.xyz / 10 * 255), 255));
             break;
         }
     }
 }
 
-fn metric(vars: Variables) -> mat4x4<num> {
-    let r = calc_r(vars);
-    let f = calc_f(vars, r);
-    let k = calc_k(vars, r);
+fn metric(pos: vec4<num>) -> mat4x4<num> {
+    let r = calc_r(pos);
+    let f = calc_f(pos, r);
+    let k = calc_k(pos, r);
 
     return minkowski + f * outer_product(k, k);
 }
@@ -112,24 +100,24 @@ fn outer_product(first: vec4<num>, second: vec4<num>) -> mat4x4<num> {
     );
 }
 
-fn calc_f(vars: Variables, r: num) -> num {
-    return (2 * G * vars.M * pow(r, 3)) / (pow(r, 4) + vars.a * vars.a * vars.pos.z * vars.pos.z);
+fn calc_f(pos: vec4<num>, r: num) -> num {
+    return (2 * G * uniforms.M * pow(r, 3)) / (pow(r, 4) + uniforms.a * uniforms.a * pos.z * pos.z);
 }
 
-fn calc_k(vars: Variables, r: num) -> vec4<num> {
+fn calc_k(pos: vec4<num>, r: num) -> vec4<num> {
     return vec4(
         1,
-        (r * vars.pos.x + vars.a * vars.pos.y) / (r * r + vars.a * vars.a),
-        (r * vars.pos.y - vars.a * vars.pos.x) / (r * r + vars.a * vars.a),
-        vars.pos.z / r
+        (r * pos.x + uniforms.a * pos.y) / (r * r + uniforms.a * uniforms.a),
+        (r * pos.y - uniforms.a * pos.x) / (r * r + uniforms.a * uniforms.a),
+        pos.z / r
     );
 }
 
-fn calc_r(vars: Variables) -> num {
-    let minus_b = length(vars.pos) - vars.a * vars.a;
+fn calc_r(pos: vec4<num>) -> num {
+    let minus_b = length(pos.xyz) - uniforms.a * uniforms.a;
 
     return sqrt(
-        0.5 * (minus_b + sqrt(minus_b * minus_b + 4 * vars.pos.z * vars.pos.z * vars.a * vars.a))
+        0.5 * (minus_b + sqrt(minus_b * minus_b + 4 * pos.z * pos.z * uniforms.a * uniforms.a))
     );
 }
 
@@ -141,23 +129,20 @@ fn inverse(mat: mat4x4<num>) -> mat4x4<num> {
         );
 }
 
-fn christoffel(vars: Variables) -> array<mat4x4<num>, 4> {
+fn christoffel(pos: vec4<num>) -> array<mat4x4<num>, 4> {
     const epsilon = 0.00001;
-    let g = metric(vars);
+    let g = metric(pos);
 
     let nabla0 = zeroMat;
 
-    var varsClone = vars;
-    varsClone.pos.x = vars.pos.x + sqrt(epsilon) * vars.pos.x;
-    let nabla1 = (metric(varsClone) - g) * (1 / varsClone.pos.x - vars.pos.x);
+    let pos_deltax = pos + vec4(sqrt(epsilon) * pos.x, 0, 0, 0);
+    let nabla1 = (metric(pos_deltax) - g) * (1 / pos_deltax.x - pos.x);
 
-    varsClone.pos.x = vars.pos.x;
-    varsClone.pos.y = vars.pos.y + sqrt(epsilon) * vars.pos.y;
-    let nabla2 = (metric(varsClone) - g) * (1 / varsClone.pos.y - vars.pos.y);
+    let pos_deltay = pos + vec4(0, sqrt(epsilon) * pos.y, 0, 0);
+    let nabla2 = (metric(pos_deltay) - g) * (1 / pos_deltay.y - pos.y);
 
-    varsClone.pos.y = vars.pos.y;
-    varsClone.pos.z = vars.pos.z + sqrt(epsilon) * vars.pos.z;
-    let nabla3 = (metric(varsClone) - g) * (1 / varsClone.pos.z - vars.pos.z);
+    let pos_deltaz = pos + vec4(0, 0, sqrt(epsilon) * pos.z, 0);
+    let nabla3 = (metric(pos_deltaz) - g) * (1 / pos_deltaz.z - pos.y);
 
     let nabla = array(
         nabla0,
@@ -185,9 +170,9 @@ fn christoffel(vars: Variables) -> array<mat4x4<num>, 4> {
     return symbol;
 }
 
-fn geodesic(velocity: vec4<num>, vars: Variables) -> vec4<num> {
+fn geodesic(velocity: vec4<num>, pos: vec4<num>) -> vec4<num> {
     var acceleration = vec4<num>(0);
-    var christoffel_syms = christoffel(vars);
+    var christoffel_syms = christoffel(pos);
 
     for (var mu = 0; mu < 4; mu++) {
         var total: num = 0;
