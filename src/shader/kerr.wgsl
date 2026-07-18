@@ -17,7 +17,7 @@ struct Variables {
 const G = 1;
 const c = 1;
 
-const DELTA = 0.01;
+const DELTA = 0.025;
 const MAX_ITERATIONS = 10000;
 
 const zeroMat = mat4x4<num>();
@@ -63,8 +63,25 @@ fn main(
             break;
         }
 
-        variables.pos += velocity * DELTA;
-        velocity += geodesic(velocity, variables) * DELTA;
+        { //Runge-Kutta
+            let k1pos = velocity;
+            let k1vel = geodesic(velocity, variables);
+
+            let varsForK2 = Variables(uniforms.M, variables.pos + k1pos * (DELTA / 2), uniforms.a);
+            let k2pos = velocity + k1vel * (DELTA / 2);
+            let k2vel = geodesic(velocity + k1vel * (DELTA / 2), varsForK2);
+
+            let varsForK3 = Variables(uniforms.M, variables.pos + k2pos * (DELTA / 2), uniforms.a);
+            let k3pos = velocity + k2vel * (DELTA / 2);
+            let k3vel = geodesic(velocity + k2vel * (DELTA / 2), varsForK3);
+
+            let varsForK4 = Variables(uniforms.M, variables.pos + k3pos * DELTA, uniforms.a);
+            let k4pos = velocity + k3vel * DELTA;
+            let k4vel = geodesic(velocity + k3vel * DELTA, varsForK4);
+
+            velocity += (DELTA / 6) * (k1vel + k2vel + k3vel + k4vel);
+            variables.pos += (DELTA / 6) * (k1pos + k2pos + k3pos + k4pos);
+        }
 
         if (length(variables.pos.xyz) < photon_sphere) {
             store_color(gid, vec4(0, 255, 0, 255));
