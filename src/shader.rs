@@ -218,10 +218,6 @@ impl Kerr {
     pub async fn run(&self, queue: &Queue, position: Vec3, width: u32, height: u32, camera_normal: Vec3, a_value: f32) -> ColorImage {
         let mut uniform_buffer_bytes = UniformBuffer::new(Vec::new());
 
-        unsafe {
-            self.device.start_graphics_debugger_capture();
-        }
-
         uniform_buffer_bytes
             .write(&kerr::Uniforms {
                 M: 1.0,
@@ -334,10 +330,6 @@ impl Kerr {
                 .copied()
                 .collect::<Vec<u8>>()
         };
-
-        unsafe {
-            self.device.stop_graphics_debugger_capture();
-        }
 
         ColorImage::from_rgba_unmultiplied([width as usize, height as usize], output_data.as_slice())
     }
