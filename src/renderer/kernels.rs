@@ -24,7 +24,7 @@ impl Compute {
 
         let test_shader = Shader::new(wgpu::include_wgsl!("../shader/simple.wgsl"), device.clone());
         let sphere_shader = BasicSphere::new(device.clone());
-        let kerr_shader = Kerr::new(device.clone());
+        let kerr_shader = Kerr::new(device.clone(), &queue);
 
         Self {
             device, queue, test_shader, sphere_shader, kerr_shader,

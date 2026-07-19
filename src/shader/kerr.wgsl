@@ -31,6 +31,10 @@ const skyRadius = 15;
 var<uniform> uniforms: Uniforms;
 @group(0) @binding(1)
 var out: texture_storage_2d<rgba8uint, write>;
+@group(1) @binding(2)
+var skymap: texture_2d<u32>;
+@group(1) @binding(3)
+var skymap_sampler: sampler;
 
 @compute @workgroup_size(8, 8)
 fn main(

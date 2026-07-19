@@ -62,18 +62,82 @@ pub mod bind_groups {
             &self.0
         }
     }
+    #[derive(Debug, Clone)]
+    pub struct BindGroup1(wgpu::BindGroup);
+    #[derive(Debug)]
+    pub struct BindGroupLayout1<'a> {
+        pub skymap: &'a wgpu::TextureView,
+        pub skymap_sampler: &'a wgpu::Sampler,
+    }
+    const LAYOUT_DESCRIPTOR1: wgpu::BindGroupLayoutDescriptor = wgpu::BindGroupLayoutDescriptor {
+        label: Some("LayoutDescriptor1"),
+        entries: &[
+            wgpu::BindGroupLayoutEntry {
+                binding: 2,
+                visibility: wgpu::ShaderStages::NONE,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Uint,
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 3,
+                visibility: wgpu::ShaderStages::NONE,
+                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                count: None,
+            },
+        ],
+    };
+    impl BindGroup1 {
+        pub fn get_bind_group_layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
+            device.create_bind_group_layout(&LAYOUT_DESCRIPTOR1)
+        }
+        pub fn from_bindings(device: &wgpu::Device, bindings: BindGroupLayout1) -> Self {
+            let bind_group_layout = device.create_bind_group_layout(&LAYOUT_DESCRIPTOR1);
+            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                layout: &bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::TextureView(bindings.skymap),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 3,
+                        resource: wgpu::BindingResource::Sampler(bindings.skymap_sampler),
+                    },
+                ],
+                label: Some("BindGroup1"),
+            });
+            Self(bind_group)
+        }
+        pub fn set<P: super::SetBindGroup>(&self, pass: &mut P) {
+            pass.set_bind_group(1, &self.0, &[]);
+        }
+        pub fn inner(&self) -> &wgpu::BindGroup {
+            &self.0
+        }
+    }
     #[derive(Debug, Copy, Clone)]
     pub struct BindGroups<'a> {
         pub bind_group0: &'a BindGroup0,
+        pub bind_group1: &'a BindGroup1,
     }
     impl BindGroups<'_> {
         pub fn set<P: super::SetBindGroup>(&self, pass: &mut P) {
             self.bind_group0.set(pass);
+            self.bind_group1.set(pass);
         }
     }
 }
-pub fn set_bind_groups<P: SetBindGroup>(pass: &mut P, bind_group0: &bind_groups::BindGroup0) {
+pub fn set_bind_groups<P: SetBindGroup>(
+    pass: &mut P,
+    bind_group0: &bind_groups::BindGroup0,
+    bind_group1: &bind_groups::BindGroup1,
+) {
     bind_group0.set(pass);
+    bind_group1.set(pass);
 }
 pub mod compute {
     pub const MAIN_WORKGROUP_SIZE: [u32; 3] = [8, 8, 1];
@@ -101,9 +165,10 @@ pub fn create_shader_module(device: &wgpu::Device) -> wgpu::ShaderModule {
 pub fn create_pipeline_layout(device: &wgpu::Device) -> wgpu::PipelineLayout {
     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
-        bind_group_layouts: &[Some(&bind_groups::BindGroup0::get_bind_group_layout(
-            device,
-        ))],
+        bind_group_layouts: &[
+            Some(&bind_groups::BindGroup0::get_bind_group_layout(device)),
+            Some(&bind_groups::BindGroup1::get_bind_group_layout(device)),
+        ],
         immediate_size: 0,
     })
 }
