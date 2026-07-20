@@ -43,11 +43,13 @@ fn main(
 ) {
     let tex_size = vec2<num>(textureDimensions(out));
     let camera_relative = (vec2<num>(gid.xy) / tex_size) - 0.5;
-    let initial_pos = uniforms.camera_pos + vec3(camera_relative * uniforms.camera_size, 0);
+    let right = cross(uniforms.camera_normal, vec3(0, 1.0, 0));
+    let initial_pos = uniforms.camera_pos
+        + (right * camera_relative.x * uniforms.camera_size.x + vec3(0, camera_relative.y * uniforms.camera_size.y, 0));
 
     var pos = vec4(initial_pos, 0);
 
-    let photon_sphere = 1.5 * (1 + sqrt(1 - uniforms.a * uniforms.a));
+    let photon_sphere = 1.5 * (uniforms.M + sqrt(uniforms.M * uniforms.M - uniforms.a * uniforms.a));
 
     var velocity = vec4(uniforms.camera_normal, 0); //todo: better initial velocity
 
