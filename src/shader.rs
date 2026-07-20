@@ -3,6 +3,7 @@ use encase::UniformBuffer;
 use glam::{vec2, Vec3};
 use std::sync::Arc;
 use std::time::Instant;
+use image::EncodableLayout;
 use image::imageops::FilterType;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 use wgpu::wgt::BufferDescriptor;
@@ -37,7 +38,7 @@ impl Kerr {
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: TextureDimension::D2,
-                format: TextureFormat::Rgba8Uint,
+                format: TextureFormat::Rgba8Unorm,
                 usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
                 label: Some("skymap_texture"),
                 view_formats: &[],

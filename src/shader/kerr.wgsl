@@ -26,13 +26,14 @@ const minkowski = mat4x4<num>(
 const maxIterColor = vec4(255, 0, 0, 255);
 
 const skyRadius = 15;
+const PI = 3.14159;
 
 @group(0) @binding(0)
 var<uniform> uniforms: Uniforms;
 @group(0) @binding(1)
 var out: texture_storage_2d<rgba8uint, write>;
 @group(1) @binding(2)
-var skymap: texture_2d<u32>;
+var skymap: texture_2d<f32>;
 @group(1) @binding(3)
 var skymap_sampler: sampler;
 
@@ -81,7 +82,12 @@ fn main(
         }
 
         if (length(pos.xyz) > skyRadius) {
-            store_color(gid, vec4(vec3<u32>(pos.xyz / 10 * 255), 255));
+            let longitude = atan2(pos.z, pos.x) / (2 * PI) + 0.5;
+            let latitude = atan2(pos.y, pos.x) / (2 * PI) + 0.5;
+
+            let color = textureSampleBaseClampToEdge(skymap, skymap_sampler, vec2(latitude, longitude));
+
+            store_color(gid, vec4<u32>(color * 255));
             break;
         }
     }
