@@ -43,9 +43,11 @@ fn main(
 ) {
     let tex_size = vec2<num>(textureDimensions(out));
     let camera_relative = (vec2<num>(gid.xy) / tex_size) - 0.5;
-    let right = cross(uniforms.camera_normal, vec3(0, 1.0, 0));
+    let right = cross(vec3(0, 1.0, 0), uniforms.camera_normal);
+    let up = cross(uniforms.camera_normal, right);
     let initial_pos = uniforms.camera_pos
-        + (right * camera_relative.x * uniforms.camera_size.x + vec3(0, camera_relative.y * uniforms.camera_size.y, 0));
+        + right * camera_relative.x * uniforms.camera_size.x
+        + up * camera_relative.y * uniforms.camera_size.y;
 
     var pos = vec4(initial_pos, 0);
 
