@@ -1,9 +1,9 @@
-use std::sync::{Arc};
+use std::sync::{Arc, Mutex};
 use crate::renderer::render_thread::{RenderThread, RendererToApp};
 use std::thread;
 use std::time::Duration;
 use glam::vec3;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::mpsc;
 use crate::renderer::app::App;
 use crate::renderer::{HoleProperties, RenderState};
 
@@ -15,7 +15,7 @@ fn main() -> Result<(), eframe::Error> {
     let state = Arc::new(
         RenderState {
             position: Mutex::new(vec3(0.0, 0.0, -5.0)),
-            resolution: Mutex::new((100, 100)),
+            resolution: Mutex::new((256, 256)),
             rotation: Mutex::new((0.0, 0.0)),
             last_frame_time: Mutex::new(Duration::ZERO),
             hole_properties: Mutex::new(HoleProperties {

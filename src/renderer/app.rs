@@ -54,11 +54,11 @@ impl eframe::App for App {
                     .inner_margin(5)
                     .show(ui, |ui| {
                         ui.label(
-                            format!("Last frame time: {:.1}ms", self.state.last_frame_time.blocking_lock().as_secs_f64() * 1000.0)
+                            format!("Last frame time: {:.1}ms", self.state.last_frame_time.lock().unwrap().as_secs_f64() * 1000.0)
                         );
 
                         ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
-                            let mut pos = self.state.position.blocking_lock();
+                            let mut pos = self.state.position.lock().unwrap();
                             ui.add(
                                 DragValue::new(&mut pos.x).speed(0.1)
                             );
@@ -71,7 +71,7 @@ impl eframe::App for App {
                         });
 
                         ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
-                            let mut rot = self.state.rotation.blocking_lock();
+                            let mut rot = self.state.rotation.lock().unwrap();
                             ui.add(
                                 DragValue::new(&mut rot.0).speed(0.01)
                             );
@@ -81,7 +81,7 @@ impl eframe::App for App {
                         });
 
                         ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
-                            let mut hole_properties = self.state.hole_properties.blocking_lock();
+                            let mut hole_properties = self.state.hole_properties.lock().unwrap();
                             ui.add(
                                 Slider::new(&mut hole_properties.a, 0.0..=1.0)
                             )

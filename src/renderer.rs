@@ -1,5 +1,5 @@
 use std::time::Duration;
-use tokio::sync::Mutex;
+use std::sync::Mutex;
 
 mod kernels;
 pub mod render_thread;

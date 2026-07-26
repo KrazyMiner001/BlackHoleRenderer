@@ -31,10 +31,10 @@ impl RenderThread {
     }
 
     pub async fn run(&self) {
-        let pos = *self.state.position.lock().await;
-        let (width, height) = *self.state.resolution.lock().await;
-        let (pitch, yaw) = *self.state.rotation.lock().await;
-        let hole_properties = *self.state.hole_properties.lock().await;
+        let pos = *self.state.position.lock().unwrap();
+        let (width, height) = *self.state.resolution.lock().unwrap();
+        let (pitch, yaw) = *self.state.rotation.lock().unwrap();
+        let hole_properties = *self.state.hole_properties.lock().unwrap();
         
         let normal = Mat3::from_rotation_x(pitch) * Mat3::from_rotation_y(yaw) * vec3(0.0, 0.0, 1.0);
 
@@ -43,7 +43,7 @@ impl RenderThread {
         let image = self.compute.kerr_shader(pos, width, height, normal, hole_properties.a).await;
         let duration = Instant::now() - now;
 
-        *self.state.last_frame_time.lock().await = duration;
+        *self.state.last_frame_time.lock().unwrap() = duration;
         let _ = self.transmitter.send(RendererToApp::NewImage(image)).await;
     }
 }
