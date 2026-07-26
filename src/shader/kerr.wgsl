@@ -11,16 +11,16 @@ struct Uniforms {
 const G = 1;
 const c = 1;
 
-const DELTA = 0.025;
+const DELTA = 0.01;
 const MAX_ITERATIONS = 10000;
 
 const zeroMat = mat4x4<num>();
 const identityMat = mat4x4<num>(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 const minkowski = mat4x4<num>(
-        -1, 0, 0, 0,
+        1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
-        0, 0, 0, 1,
+        0, 0, 0, -1,
     );
 
 const maxIterColor = vec4(255, 0, 0, 255);
@@ -120,18 +120,21 @@ fn calc_f(pos: vec4<num>, r: num) -> num {
 
 fn calc_k(pos: vec4<num>, r: num) -> vec4<num> {
     return vec4(
-        1,
         (r * pos.x + uniforms.a * pos.y) / (r * r + uniforms.a * uniforms.a),
         (r * pos.y - uniforms.a * pos.x) / (r * r + uniforms.a * uniforms.a),
-        pos.z / r
+        pos.z / r,
+        1.0
     );
 }
 
 fn calc_r(pos: vec4<num>) -> num {
-    let minus_b = length(pos.xyz) - uniforms.a * uniforms.a;
+    let a = uniforms.a;
+    let x = pos.x;
+    let y = pos.y;
+    let z = pos.z;
 
     return sqrt(
-        0.5 * (minus_b + sqrt(minus_b * minus_b + 4 * pos.z * pos.z * uniforms.a * uniforms.a))
+        (-a*a + x*x + y*y + z*z + sqrt(a*a*a*a - 2*a*a*x*x - 2*a*a*y*y + 2*a*a*z*z + x*x*x*x + 2*x*x*y*y + 2*x*x*z*z + y*y*y*y + 2*y*y*z*z + z*z*z*z)) / 2
     );
 }
 
@@ -144,19 +147,21 @@ fn inverse(mat: mat4x4<num>) -> mat4x4<num> {
 }
 
 fn christoffel(pos: vec4<num>) -> array<mat4x4<num>, 4> {
-    const epsilon = 0.00001;
+    const epsilon = 0.01;
     let g = metric(pos);
 
-    let nabla0 = zeroMat;
-
     let pos_deltax = pos + vec4(sqrt(epsilon) * pos.x, 0, 0, 0);
-    let nabla1 = (metric(pos_deltax) - g) * (1 / pos_deltax.x - pos.x);
+    let nabla0 = (metric(pos_deltax) - g) * (1 / (pos_deltax.x - pos.x));
 
     let pos_deltay = pos + vec4(0, sqrt(epsilon) * pos.y, 0, 0);
-    let nabla2 = (metric(pos_deltay) - g) * (1 / pos_deltay.y - pos.y);
+    let nabla1 = (metric(pos_deltay) - g) * (1 / (pos_deltay.y - pos.y));
 
     let pos_deltaz = pos + vec4(0, 0, sqrt(epsilon) * pos.z, 0);
-    let nabla3 = (metric(pos_deltaz) - g) * (1 / pos_deltaz.z - pos.y);
+    let nabla2 = (metric(pos_deltaz) - g) * (1 / (pos_deltaz.z - pos.z));
+
+    //let pos_deltat = pos + vec4(0, 0, 0, sqrt(epsilon) * pos.w);
+    //let nabla3= (metric(pos_deltat) - g) * (1 / (pos_deltat.w - pos.w));
+    let nabla3 = zeroMat;
 
     let nabla = array(
         nabla0,
